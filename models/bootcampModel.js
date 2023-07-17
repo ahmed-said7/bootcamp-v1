@@ -1,5 +1,8 @@
+
 const mongoose  = require("mongoose");
+
 let geocoder = require("../utils/geocoder");
+
 let bootcampSchema=new mongoose.Schema({
     name:{
         type:String,
@@ -8,7 +11,8 @@ let bootcampSchema=new mongoose.Schema({
         ,
     photo: {
         type: String,
-        },
+        }
+        ,
     housing: {
             type: Boolean,
             default: false
@@ -33,25 +37,30 @@ let bootcampSchema=new mongoose.Schema({
     NumberOfCourses:Number,
     user:{type:mongoose.Schema.Types.ObjectId,ref:'User'},
     addresse:[{type:mongoose.Schema.Types.ObjectId,ref:'Addresse'}],
-    locationAddresse:{type:String,required:true},
+    
     coordinates: {
         type: [Number],
         index: '2dsphere'
     },
+
     careers: {
         type: String,
         required: true,
         enum: ['Web Development', 'Mobile Development', 'UI/UX', 'Data Science', 'Business', 'Other']
     },
+
     description:{
         type: String,
         required: true,
     },
+
     phone:{
         type: Number,
         required: true,
     },
+
     weeks:Number,
+
     email:{
         type: String,
         required: true,
@@ -65,6 +74,7 @@ let bootcampSchema=new mongoose.Schema({
     }
         );
 
+
 bootcampSchema.pre('save',async function(next){
     if(!this.coordinates){
         let pos=await geocoder.geocode(this.locationAddresse);
@@ -72,6 +82,7 @@ bootcampSchema.pre('save',async function(next){
     };
     next();
 });
+
 
 bootcampSchema.virtual("courses",{
     ref:"Course",
@@ -81,11 +92,25 @@ bootcampSchema.virtual("courses",{
 bootcampSchema.virtual("reviews",{
     ref:"Review",
     localField:"_id",foreignField:"bootcamp"
+
 });
 
-
-
 let bootcampModel=mongoose.model('bootcamp',bootcampSchema);
+
+bootcampSchema.post('init',(doc)=>{
+    if(doc.photo){
+        let url=`http://localhost:3000/bootcamps/${doc.photo}`;
+        doc.photo=url
+    };
+});
+
+bootcampSchema.post('save',(doc)=>{
+    if(doc.photo){
+        let url=`http://localhost:3000/bootcamps/${doc.photo}`;
+        doc.photo=url
+    };
+});
+
 module.exports=bootcampModel;
 
 

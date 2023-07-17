@@ -13,13 +13,14 @@ let courseSchema=new mongoose.Schema({
         type:Number,
         required:true,
     },
+    photo:String,
     sold:{type:Number,default:0},
     user:{type:mongoose.Schema.Types.ObjectId,ref:"User",required:true}
     ,bootcamp:{type:mongoose.Schema.Types.ObjectId,ref:"Bootcamp",required:true},
     minimumSkils: {   type:String,
         enum:['begineer','medium','senior']
         ,default:'begineer'}
-    ,weeks:{type:String,required:true},
+    ,weeks:{type:Number,required:true},
     description:{type:String,required:true}
     ,scholarshipAvailable: {
         type: Boolean,
@@ -50,6 +51,20 @@ courseSchema.statics.calc=async function(bootcampId){
     };
 };
 
+
+courseSchema.post('init',(doc)=>{
+    if(doc.photo){
+        let url=`http://localhost:3000/courses/${doc.photo}`;
+        doc.photo=url
+    };
+});
+
+courseSchema.post('save',(doc)=>{
+    if(doc.photo){
+        let url=`http://localhost:3000/courses/${doc.photo}`;
+        doc.photo=url
+    };
+});
 
 courseSchema.post('save',function(doc){
     doc.constructor.calc(doc.bootcamp);

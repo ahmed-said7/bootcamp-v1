@@ -2,6 +2,10 @@
 let {setUserToBody,createReview,deleteReview,getReviews,
     updateReview,getReview,setBootcampIdToBody}=require('../services/reviewServices');
 
+let {getReviewValidator,updateReviewValidator,deleteReviewValidator,createReviewValidator}=
+require('../validators/reviewValidator')
+
+
 let {protected,allowedTo}
     =require('../services/authServices');
 
@@ -11,12 +15,12 @@ router.use(protected,allowedTo('admin','user'));
 
 router.route('/')
     .get(setBootcampIdToBody,getReviews)
-    .post(setUserToBody,createReview);
+    .post(createReviewValidator,setUserToBody,createReview);
 
 
 router.route('/:id')
-    .get(getReview)
-    .post(updateReview).
-    delete(deleteReview);
+    .get(getReviewValidator,getReview)
+    .post(updateReviewValidator,updateReview).
+    delete(deleteReviewValidator,deleteReview);
 
 module.exports=router;

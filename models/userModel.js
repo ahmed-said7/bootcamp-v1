@@ -7,6 +7,7 @@ let userSchema=new mongoose.Schema({
         trim:true,
         required:true,
     },
+    photo:String,
     email:{
         type:String,
         required:true,
@@ -50,6 +51,19 @@ userSchema.pre('save',async function(next){
     next();
 });
 
+userSchema.post('init',(doc)=>{
+    if(doc.photo){
+        let url=`http://localhost:3000/users/${doc.photo}`;
+        doc.photo=url
+    };
+});
+
+userSchema.post('save',(doc)=>{
+    if(doc.photo){
+        let url=`http://localhost:3000/users/${doc.photo}`;
+        doc.photo=url
+    };
+});
 
 let userModel=mongoose.model('User',userSchema);
 module.exports=userModel;

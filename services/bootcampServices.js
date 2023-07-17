@@ -3,6 +3,13 @@ let handler=require('express-async-handler');
 let Bootcamp=require('../models/bootcampModel');
 let {getAll,createOne,deleteOne,updateOne,getOne}=require('../services/handler');
 
+let bootcampOwner=handler(async(req,res,next)=>{
+    let course=await Bootcamp.findOne({_id:req.params.id,user:req.user._id});
+    if(!course){
+        return next(new apiError('you are not allowed to access bootcamps'));
+    }
+    next();
+});
 
 let setUserToBody=handler(async(req,res,next)=>{
     if(!req.body.user){
@@ -25,4 +32,5 @@ let getBootcampWithinRadius=handler(async(req,res,next)=>{
     res.status(200).json({data:bootcamps,status:"success"});
 });
 
-module.exports={getBootcampWithinRadius,setUserToBody,createBootcamp,deleteBootcamp,getBootcamps,updateBootcamp,getBootcamp};
+module.exports={getBootcampWithinRadius,setUserToBody,createBootcamp,deleteBootcamp,
+    getBootcamps,updateBootcamp,getBootcamp,bootcampOwner};
