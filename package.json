@@ -14,7 +14,5 @@
     "nodemailer": "^6.9.3",
     "path": "^0.12.7",
     "stripe": "^12.13.0"
-  },"engines": {
-    "node": ">=NODE_JS_VERSION"
-    }
+  },"engines": {"node": "^18.14.2"}
 }
