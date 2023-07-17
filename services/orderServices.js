@@ -98,12 +98,34 @@ let checkoutSession=handler(async(req,res,next)=>{
         mode: 'payment',
         client_email:req.email,
         client_reference_id:cart._id,
-        success_url:`${req.protocol()}/order`,
-        cancel_url:`${process.env.Domain}/cart`,
+        success_url:`${req.protocol}://${req.get('host')}/order`,
+        cancel_url:`${req.protocol}://${req.get('host')}/cart`,
         });
         res.status(200).json({status:"success",data:session});
 });
 
+let createOnlineOrder=(event)=>handler(async(req,res,next)=>{
+    
+});
+
+let webhookSession=handler(async(req,res,next)=>{
+    let event;
+    const signature = req.headers['stripe-signature'];
+    try {
+        event = stripe.webhooks.constructEvent(
+            req.body,
+            signature,
+            process.env.WHSEEC
+        );
+    } catch (err) {
+        console.log( err.message);
+        return next(new apiError(err.message,400));
+    };
+    if(event.type === 'checkout.session.completed') {
+        console.log(event);
+        createOnlineOrder(event);
+    };
+    });
 
 module.exports={createOrder,updatePaidOrder,updateDeliveredOrder,
-    getLoggedUserOrder,getSpecificOrder,checkoutSession};
+    getLoggedUserOrder,getSpecificOrder,checkoutSession,webhookSession};

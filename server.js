@@ -9,7 +9,13 @@ connectionToDB(process.env.URL);
 let cors=require('cors');
 let apiError=require('./utils/apiError');
 
+let {webhookSession}=require('./services/orderServices');
+
 app.use(cors('*'));
+
+
+app.route('/webhook').post( express.raw({type: 'application/json'}), webhookSession );
+
 app.use(express.json());
 app.use(morgan('dev'));
 app.use(express.static(path.join(__dirname,'uploads')));
