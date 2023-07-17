@@ -2,8 +2,9 @@ let handler=require('express-async-handler');
 let Order=require('../models/orderModel');
 let Cart=require('../models/cartModel');
 let Course=require('../models/cartModel');
+let User=require('../models/userModel');
 require('dotenv').config({path:'./environ.env'});
-
+let apiError=require('../utils/apiError');
 let stripe=require('stripe')(process.env.STRIPE_API);
 
 
@@ -77,12 +78,14 @@ let getSpecificOrder=handler(async(req, res, next)=>{
 });
 
 
+
 let checkoutSession=handler(async(req,res,next)=>{
     let cart=await Cart.findOne({user:req.user._id});
     if(!cart){
         return next(new apiError('cart not found',400));
     };
     let price=cart.totalPriceAfterDiscount? cart.totalPriceAfterDiscount : cart.totalPrice;
+    console.log(cart._id,req.user.email);
     let session = await stripe.checkout.sessions.create({
         line_items: [
         {
@@ -96,35 +99,60 @@ let checkoutSession=handler(async(req,res,next)=>{
         },
                 ],
         mode: 'payment',
-        client_email:req.email,
-        client_reference_id:cart._id,
+        
         success_url:`${req.protocol}://${req.get('host')}/order`,
         cancel_url:`${req.protocol}://${req.get('host')}/cart`,
+        customer_email:req.user.email,
+        client_reference_id:cart._id.toString(),
         });
         res.status(200).json({status:"success",data:session});
 });
 
-let createOnlineOrder=(event)=>handler(async(req,res,next)=>{
-    
-});
+
+
+let createOnlineOrder=handler(async(session)=>{
+        let email=session.customer_email;
+        let cartId=session.client_reference_id;
+        let cart = await Cart.findById(cartId);
+        if(!cart){
+            return next(new apiError('cart not found',400));
+        };
+        let cartItems=cart.cartItems;
+        let totalPrice=cart.totalPriceAfterDiscount ? cart.totalPriceAfterDiscount : cart.totalPrice;
+        await Promise.all(cartItems.map(async(item)=>{
+            await Course.findByIdAndUpdate(item.course,{$inc:{sold:1}},{new:true});
+        }));
+        let user=await User.findOne({email});
+        
+        await Order.create({
+            cartItems,totalPrice,user:user._id,
+            isPaid:true,paidAt:Date.now()
+        });
+
+        await Cart.findByIdAndDelete(cartId);
+        
+})
+
 
 let webhookSession=handler(async(req,res,next)=>{
+
     let event;
-    const signature = req.headers['stripe-signature'];
+    let signature = req.headers['stripe-signature'];
+
     try {
         event = stripe.webhooks.constructEvent(
             req.body,
             signature,
-            process.env.WHSEEC
+            process.env.WHSEC
         );
     } catch (err) {
-        console.log( err.message);
         return next(new apiError(err.message,400));
     };
-    if(event.type === 'checkout.session.completed') {
-        console.log(event);
-        createOnlineOrder(event);
+
+    if(event.type === "checkout.session.completed") {
+        await createOnlineOrder(event.data.object);
     };
+
     });
 
 module.exports={createOrder,updatePaidOrder,updateDeliveredOrder,
